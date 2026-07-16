@@ -17,7 +17,9 @@ import { renderProjectSvg, renderUtilitySvg, svgDataUrl, type UtilityIcon } from
 import { deriveDisplayState, requiresAttentionPulse } from "./status.js";
 import {
   normalizeSlotSettings,
+  normalizeModelPresetSettings,
   normalizeTargetSettings,
+  type ModelPresetSettingsJson,
   type SlotSettingsJson,
   type TargetActionSettingsJson
 } from "./settings.js";
@@ -370,5 +372,79 @@ export class CodexSkillsAction extends UtilityAction {
     } catch {
       await event.action.showAlert();
     }
+  }
+}
+
+@action({ UUID: "com.codexstreamdeck.control.model-preset" })
+export class ModelPresetAction extends SingletonAction<ModelPresetSettingsJson> {
+  constructor() {
+    super();
+    coordinator.onChange(() => void this.#renderAll());
+  }
+
+  override async onWillAppear(event: WillAppearEvent<ModelPresetSettingsJson>): Promise<void> {
+    if (event.action.isKey()) await this.#renderKey(event.action, event.payload.settings);
+  }
+
+  override async onKeyDown(event: KeyDownEvent<ModelPresetSettingsJson>): Promise<void> {
+    const alias = normalizeModelPresetSettings(event.payload.settings).modelAlias;
+    try {
+      await coordinator.selectModel(alias);
+      await event.action.showOk();
+    } catch (error) {
+      streamDeck.logger.warn(error instanceof Error ? error.message : "Model preset failed");
+      await event.action.showAlert();
+    }
+  }
+
+  async #renderAll(): Promise<void> {
+    await Promise.all([...this.actions].filter((item) => item.isKey()).map(async (item) => {
+      const key = item as KeyAction<ModelPresetSettingsJson>;
+      await this.#renderKey(key, await key.getSettings<ModelPresetSettingsJson>());
+    }));
+  }
+
+  async #renderKey(key: KeyAction<ModelPresetSettingsJson>, raw: ModelPresetSettingsJson): Promise<void> {
+    const alias = normalizeModelPresetSettings(raw).modelAlias;
+    const model = alias === "auto" ? undefined : coordinator.modelForAlias(alias);
+    const selected = alias === "auto" ? !coordinator.settings.presetModel : model?.model === coordinator.settings.presetModel;
+    const available = alias === "auto" || !!model;
+    const label = alias === "auto" ? "Auto" : available ? alias : `${alias} ?`;
+    await key.setImage(svgDataUrl(renderUtilitySvg(label, alias === "auto" ? "auto" : available ? "model" : "warning",
+      selected ? "#86EFAC" : available ? "#C4B5FD" : "#FBBF24",
+      selected ? "#0A281B" : "#21133B")));
+    await key.setTitle(undefined);
+  }
+}
+
+@action({ UUID: "com.codexstreamdeck.control.effort-preset" })
+export class EffortPresetAction extends SingletonAction<TargetActionSettingsJson> {
+  constructor() {
+    super();
+    coordinator.onChange(() => void this.#renderAll());
+  }
+
+  override async onWillAppear(event: WillAppearEvent<TargetActionSettingsJson>): Promise<void> {
+    if (event.action.isKey()) await this.#renderKey(event.action);
+  }
+
+  override async onKeyDown(event: KeyDownEvent<TargetActionSettingsJson>): Promise<void> {
+    try {
+      await coordinator.cycleEffort();
+      await event.action.showOk();
+    } catch {
+      await event.action.showAlert();
+    }
+  }
+
+  async #renderAll(): Promise<void> {
+    await Promise.all([...this.actions].filter((item) => item.isKey()).map((item) => this.#renderKey(item as KeyAction<TargetActionSettingsJson>)));
+  }
+
+  async #renderKey(key: KeyAction<TargetActionSettingsJson>): Promise<void> {
+    const effort = coordinator.settings.presetEffort || "auto";
+    const labels: Record<string, string> = { auto: "Effort auto", low: "Léger", medium: "Moyen", high: "Élevé", xhigh: "Très élevé", max: "Max", ultra: "Ultra" };
+    await key.setImage(svgDataUrl(renderUtilitySvg(labels[effort] ?? effort, "effort", "#FDE68A", "#33270B")));
+    await key.setTitle(undefined);
   }
 }

@@ -144,6 +144,38 @@
           "Image": "imgs/key"
         }
       ]
+    },
+    {
+      "Name": "Preset de modèle Codex",
+      "UUID": "com.codexstreamdeck.control.model-preset",
+      "Icon": "imgs/action-settings",
+      "Tooltip": "Choisir Auto, Sol, Terra ou Luna parmi les modèles réellement exposés par Codex.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "SupportedInMultiActions": false,
+      "UserTitleEnabled": false,
+      "States": [
+        {
+          "Image": "imgs/key"
+        }
+      ]
+    },
+    {
+      "Name": "Preset d’effort Codex",
+      "UUID": "com.codexstreamdeck.control.effort-preset",
+      "Icon": "imgs/action-settings",
+      "Tooltip": "Faire défiler les niveaux d’effort pris en charge par le modèle sélectionné.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "SupportedInMultiActions": false,
+      "UserTitleEnabled": false,
+      "States": [
+        {
+          "Image": "imgs/key"
+        }
+      ]
     }
   ],
   "Author": "Codex Stream Deck Contributors",
@@ -172,5 +204,5 @@
     "MinimumVersion": "7.1"
   },
   "UUID": "com.codexstreamdeck.control",
-  "Version": "0.1.1.0"
+  "Version": "0.2.0.0"
 }

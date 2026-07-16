@@ -11,10 +11,12 @@ import { CacheStore } from "./cache.js";
 import { CodexAppServer, RpcError, turnNeedsHydration } from "./codex-app-server.js";
 import type {
   CacheFile,
+  CodexModel,
   CodexThread,
   CodexTurn,
   ConnectionState,
   ProjectState,
+  ReasoningEffort,
   StatusEnvelope,
   StatusReport
 } from "./domain.js";
@@ -33,6 +35,7 @@ import {
 } from "./notify-bridge.js";
 import { dataDirectory } from "./paths.js";
 import { buildProjects, canonicalizeProject, isUnderway, projectDisplayName } from "./project-model.js";
+import { modelForAlias, resolvePreset } from "./presets.js";
 import {
   DEFAULT_GLOBAL_SETTINGS,
   normalizeGlobalSettings,
@@ -103,6 +106,7 @@ export class Coordinator {
   #projects: ProjectState[] = [];
   #allProjects: ProjectState[] = [];
   #threads: CodexThread[] = [];
+  #models: CodexModel[] = [];
   #preloaded = false;
   #started = false;
   #connecting = false;
@@ -134,6 +138,41 @@ export class Coordinator {
 
   get projects(): readonly ProjectState[] {
     return this.#projects;
+  }
+
+  get models(): readonly CodexModel[] {
+    return this.#models;
+  }
+
+  selectedModel(): CodexModel | undefined {
+    return this.#models.find((model) => model.model === this.#settings.presetModel);
+  }
+
+  modelForAlias(alias: "sol" | "terra" | "luna"): CodexModel | undefined {
+    return modelForAlias(this.#models, alias);
+  }
+
+  async selectModel(alias: "auto" | "sol" | "terra" | "luna"): Promise<void> {
+    const model = alias === "auto" ? undefined : this.modelForAlias(alias);
+    if (alias !== "auto" && !model) throw new Error(`${alias.toUpperCase()} is not exposed by model/list`);
+    const effort = model && this.#settings.presetEffort && !model.supportedReasoningEfforts.some(
+      (entry) => entry.reasoningEffort === this.#settings.presetEffort
+    ) ? model.defaultReasoningEffort : this.#settings.presetEffort;
+    await this.#saveSettings({ presetModel: model?.model ?? "", presetEffort: effort });
+  }
+
+  async cycleEffort(): Promise<void> {
+    const model = this.selectedModel();
+    const supported = model?.supportedReasoningEfforts.map((entry) => entry.reasoningEffort)
+      ?? (["low", "medium", "high", "xhigh"] as ReasoningEffort[]);
+    if (!supported.length) throw new Error("No reasoning effort is exposed for this model");
+    const current = this.#settings.presetEffort;
+    const next = supported[(supported.indexOf(current as ReasoningEffort) + 1) % supported.length];
+    await this.#saveSettings({ presetEffort: next ?? "" });
+  }
+
+  async clearPreset(): Promise<void> {
+    await this.#saveSettings({ presetModel: "", presetEffort: "" });
   }
 
   async preload(): Promise<void> {
@@ -242,7 +281,9 @@ export class Coordinator {
   async createTask(project: ProjectState | undefined, prompt: string): Promise<void> {
     if (!project) throw new Error("No project is assigned to the selected slot");
     const cleanedPrompt = prompt.trim().slice(0, 16_000);
-    if (!cleanedPrompt || this.#settings.newTaskMode === "handoff" || !this.#client.connected) {
+    const preset = this.#resolvedPreset();
+    if ((!cleanedPrompt && !preset.active) || this.#settings.newTaskMode === "handoff" || !this.#client.connected) {
+      if (preset.active) throw new Error("The active preset requires the connected plugin-owned task mode");
       openNewCodexTask(project.projectRoot, cleanedPrompt || undefined);
       return;
     }
@@ -250,17 +291,26 @@ export class Coordinator {
       cwd: project.projectRoot,
       approvalPolicy: "never",
       sandbox: "workspace-write",
-      threadSource: "stream-deck"
+      threadSource: "stream-deck",
+      ...(preset.model ? { model: preset.model } : {}),
+      ...(preset.effort ? { config: { model_reasoning_effort: preset.effort } } : {})
     });
+    this.#threads.unshift(started.thread);
+    await this.#rebuildProjects();
+    if (!cleanedPrompt) {
+      openCodexThread(started.thread.id);
+      return;
+    }
     const response = await this.#client.request<TurnStartResponse>("turn/start", {
       threadId: started.thread.id,
       input: [{ type: "text", text: cleanedPrompt }],
       cwd: project.projectRoot,
       approvalPolicy: "never",
-      sandboxPolicy: workspaceWriteSandbox(project.projectRoot)
+      sandboxPolicy: workspaceWriteSandbox(project.projectRoot),
+      ...(preset.model ? { model: preset.model } : {}),
+      ...(preset.effort ? { effort: preset.effort } : {})
     });
     this.#activeTurns.set(started.thread.id, response.turn.id);
-    this.#threads.unshift(started.thread);
     await this.#rebuildProjects();
     openCodexThread(started.thread.id);
   }
@@ -333,6 +383,14 @@ export class Coordinator {
       lastError: this.#lastError,
       projectCount: this.#projects.length,
       activeTurnCount: this.#activeTurns.size,
+      presetModel: this.#settings.presetModel,
+      presetEffort: this.#settings.presetEffort,
+      models: this.#models.map((model) => ({
+        model: model.model,
+        displayName: model.displayName,
+        defaultEffort: model.defaultReasoningEffort,
+        efforts: model.supportedReasoningEfforts.map((entry) => entry.reasoningEffort)
+      })),
       dataDirectory: this.#directory,
       bridgeRunning: bridge.running,
       bridgeAccepted: bridge.accepted,
@@ -441,7 +499,14 @@ export class Coordinator {
     }
     try {
       const response = await this.#client.listThreads(this.#settings.sourceKinds);
+      const models = await this.#client.listModels().catch((error) => {
+        this.#logger.warn("model/list unavailable; preset keys remain unavailable", {
+          error: error instanceof Error ? error.message.slice(0, 200) : "unknown"
+        });
+        return { data: this.#models, nextCursor: null };
+      });
       this.#threads = response.data;
+      this.#models = models.data.filter((model) => !model.hidden);
       this.#cache.threads = response.data;
       await this.#rebuildProjects();
       this.#connection = "connected";
@@ -452,6 +517,16 @@ export class Coordinator {
       else this.#connection = "degraded";
       this.#emitChange();
     }
+  }
+
+  #resolvedPreset(): { active: boolean; model?: string; effort?: ReasoningEffort } {
+    return resolvePreset(this.#models, this.#settings.presetModel, this.#settings.presetEffort);
+  }
+
+  async #saveSettings(patch: Partial<GlobalSettings>): Promise<void> {
+    this.#settings = normalizeGlobalSettings({ ...this.#settings, ...patch });
+    await streamDeck.settings.setGlobalSettings(this.#settings as GlobalSettingsJson);
+    this.#emitChange();
   }
 
   async #rebuildProjects(): Promise<void> {

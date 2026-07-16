@@ -17,6 +17,9 @@ This is an unofficial community project and is not affiliated with or endorsed b
 - Tap to open the exact `codex://threads/<id>` task
 - Hold to run a schema-constrained status check without project-file writes or tool network access
 - Actions Actualiser, Nouvelle, Code, À relire, Arrêter, Connexion, Réglages et Skills
+- Presets dynamiques Auto, Sol, Terra et Luna, découverts via `model/list`
+- Effort cyclable selon les niveaux réellement pris en charge par le modèle sélectionné
+- Application du preset aux nouvelles tâches démarrées par le plugin
 - Optional completion updates from Codex desktop, CLI, and IDE through a loopback-only notify bridge
 - Atomic local cache, bounded payloads, secret-redacted logs, and defensive approval rejection
 
@@ -51,13 +54,18 @@ npm run dev
 
 See [Complete setup](docs/SETUP.md) for Codex authentication, key layout, passive updates, troubleshooting, and uninstall steps.
 
-## Recommended 15-key layout
+## Recommended XL layout
 
 ```text
 [Project 1] [Project 2] [Project 3] [Project 4] [Project 5]
 [Project 6] [Project 7] [Project 8] [Refresh  ] [Health   ]
 [New Task ] [Open Code] [Review   ] [Interrupt] [Settings ]
+[MODÈLE   ] [EFFORT   ] [AUTO     ] [SOL      ] [TERRA    ] [LUNA     ] [PUISSANCE]
 ```
+
+`MODÈLE` et `EFFORT` ouvrent le sélecteur natif combiné de la tâche actuellement affichée dans Codex. Les touches `AUTO`, `SOL`, `TERRA`, `LUNA` et `PUISSANCE` pilotent le preset des prochaines tâches créées par le plugin. Un modèle absent de `model/list` reste explicitement indisponible au lieu d’être simulé.
+
+Sous Windows, le script `scripts/install-preset-row.ps1` ajoute cette rangée à un profil Codex existant après en avoir sauvegardé le manifeste.
 
 Project keys automatically follow physical position unless you assign a slot number or pin a task in the Property Inspector.
 

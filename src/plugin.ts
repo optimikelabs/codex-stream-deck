@@ -3,9 +3,11 @@ import streamDeck from "@elgato/streamdeck";
 import {
   CodexSettingsAction,
   CodexSkillsAction,
+  EffortPresetAction,
   HealthAction,
   InterruptAction,
   NewTaskAction,
+  ModelPresetAction,
   OpenEditorAction,
   ProjectSlotAction,
   RefreshAllAction,
@@ -24,6 +26,8 @@ streamDeck.actions.registerAction(new InterruptAction());
 streamDeck.actions.registerAction(new HealthAction());
 streamDeck.actions.registerAction(new CodexSettingsAction());
 streamDeck.actions.registerAction(new CodexSkillsAction());
+streamDeck.actions.registerAction(new ModelPresetAction());
+streamDeck.actions.registerAction(new EffortPresetAction());
 
 streamDeck.system.onSystemDidWakeUp(() => void coordinator.reconnect());
 

@@ -10,6 +10,9 @@ export type UtilityIcon =
   | "health"
   | "settings"
   | "skills"
+  | "model"
+  | "effort"
+  | "auto"
   | "hold"
   | "warning";
 
@@ -99,6 +102,12 @@ function utilityIconSvg(icon: UtilityIcon, color: string): string {
       return `<circle cx="72" cy="57" r="14" ${stroke}/><path d="M72 23v10m0 48v10M38 57h10m48 0h10M48 33l7 7m34 34 7 7m0-48-7 7M55 74l-7 7" ${stroke}/>`;
     case "skills":
       return `<path d="m72 23 9 22 22 9-22 9-9 22-9-22-22-9 22-9z" ${stroke}/>`;
+    case "model":
+      return `<path d="M39 82V34h16l17 24 17-24h16v48M53 82V57m38 25V57" ${stroke}/>`;
+    case "effort":
+      return `<path d="M35 83h74M43 75l18-22 14 12 25-32" ${stroke}/><path d="M86 33h14v14" ${stroke}/>`;
+    case "auto":
+      return `<path d="M42 57a30 30 0 0 1 51-21l9 9M102 32v13H89M102 57a30 30 0 0 1-51 21l-9-9M42 82V69h13" ${stroke}/>`;
     case "hold":
       return `<circle cx="72" cy="57" r="34" ${stroke}/><rect x="57" y="42" width="30" height="30" rx="5" fill="${color}"/>`;
     case "warning":
