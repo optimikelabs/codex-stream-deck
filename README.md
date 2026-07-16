@@ -19,7 +19,7 @@ This is an unofficial community project and is not affiliated with or endorsed b
 - Actions Actualiser, Nouvelle, Code, À relire, Arrêter, Connexion, Réglages et Skills
 - Presets dynamiques Auto, Sol, Terra et Luna, découverts via `model/list`
 - Effort cyclable selon les niveaux réellement pris en charge par le modèle sélectionné
-- Presets directs `Léger`, `Moyen`, `Élevé`, `Très élevé`, `Max` et `Ultra` ; maintien pour revenir au défaut du modèle
+- Commandes natives directes `Léger`, `Moyen`, `Élevé`, `Très élevé`, `Max` et `Ultra` pour le composer actuellement ouvert
 - Application du preset aux nouvelles tâches démarrées par le plugin
 - Optional completion updates from Codex desktop, CLI, and IDE through a loopback-only notify bridge
 - Atomic local cache, bounded payloads, secret-redacted logs, and defensive approval rejection
@@ -61,12 +61,16 @@ See [Complete setup](docs/SETUP.md) for Codex authentication, key layout, passiv
 [Project 1] [Project 2] [Project 3] [Project 4] [Project 5]
 [Project 6] [Project 7] [Project 8] [Refresh  ] [Health   ]
 [New Task ] [Open Code] [Review   ] [Interrupt] [Settings ]
-[MODÈLE / EFFORT] [MODÈLE DÉFAUT] [SOL      ] [TERRA    ] [LUNA     ] [PUISSANCE]
+[MODÈLE / EFFORT] [MODÈLE DÉFAUT] [SOL      ] [TERRA    ] [LUNA     ]
+[LÉGER    ] [MOYEN    ] [ÉLEVÉ    ] [TRÈS ÉLEVÉ] [MAX      ] [ULTRA    ]
 ```
 
-`MODÈLE / EFFORT` ouvre l’unique sélecteur natif combiné de la tâche actuellement affichée dans Codex. Les touches `MODÈLE DÉFAUT`, `SOL`, `TERRA`, `LUNA` et `PUISSANCE` pilotent uniquement le preset des prochaines tâches créées par le plugin. `PAR DÉFAUT` signifie que le plugin n’impose aucun effort et laisse le modèle utiliser son niveau par défaut. Un modèle absent de `model/list` reste explicitement indisponible au lieu d’être simulé.
+`MODÈLE / EFFORT` ouvre l’unique sélecteur natif combiné de la tâche actuellement affichée dans Codex. Les touches `MODÈLE DÉFAUT`, `SOL`, `TERRA` et `LUNA` pilotent uniquement le preset des prochaines tâches créées par le plugin. Un modèle absent de `model/list` reste explicitement indisponible au lieu d’être simulé.
+
+Les six touches d’effort utilisent les commandes clavier natives de Codex. Chaque touche descend d’abord jusqu’au minimum, puis remonte au niveau demandé. Ce mécanisme agit donc sur le composer ouvert et sur le prochain tour, indépendamment du bridge App Server. Si un modèle ne propose pas `Ultra`, la commande native reste bornée à son niveau maximal disponible.
 
 Sous Windows, le script `scripts/install-preset-row.ps1` ajoute cette rangée à un profil Codex existant après en avoir sauvegardé le manifeste.
+Le script `scripts/install-native-effort-hotkeys.ps1` convertit uniquement les touches d’effort fixes déjà présentes, sans les déplacer. Il sauvegarde le manifeste, fusionne deux raccourcis réservés dans `~/.codex/keybindings.json`, puis demande un redémarrage unique de Codex pour charger ces raccourcis.
 
 Project keys automatically follow physical position unless you assign a slot number or pin a task in the Property Inspector.
 
