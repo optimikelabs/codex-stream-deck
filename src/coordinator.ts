@@ -167,7 +167,8 @@ export class Coordinator {
       ?? (["low", "medium", "high", "xhigh"] as ReasoningEffort[]);
     if (!supported.length) throw new Error("No reasoning effort is exposed for this model");
     const current = this.#settings.presetEffort;
-    const next = supported[(supported.indexOf(current as ReasoningEffort) + 1) % supported.length];
+    const choices: Array<ReasoningEffort | ""> = ["", ...supported];
+    const next = choices[(choices.indexOf(current) + 1) % choices.length];
     await this.#saveSettings({ presetEffort: next ?? "" });
   }
 
