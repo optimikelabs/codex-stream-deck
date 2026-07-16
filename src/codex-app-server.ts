@@ -79,6 +79,14 @@ export interface ThreadListResponse {
   nextCursor: string | null;
 }
 
+export interface ThreadReadResponse {
+  thread: CodexThread;
+}
+
+export function turnNeedsHydration(turn: CodexTurn): boolean {
+  return turn.itemsView === "notLoaded" || !Array.isArray(turn.items) || turn.items.length === 0;
+}
+
 export class CodexAppServer extends EventEmitter {
   readonly #logger: DiagnosticLogger;
   #child: ChildProcessWithoutNullStreams | undefined;
@@ -139,7 +147,7 @@ export class CodexAppServer extends EventEmitter {
     const initialized = await this.request<Record<string, unknown>>(
       "initialize",
       {
-        clientInfo: { name: "codex_stream_deck", title: "Codex Stream Deck", version: "0.1.0" }
+        clientInfo: { name: "codex_stream_deck", title: "Codex Stream Deck", version: "0.1.1" }
       },
       15_000
     );
@@ -210,6 +218,15 @@ export class CodexAppServer extends EventEmitter {
       this.#logger.warn("thread/list filters unsupported; retrying compatible subset", { code: error.code });
       return this.request<ThreadListResponse>("thread/list", { limit: 100, archived: false }, 30_000);
     }
+  }
+
+  async readTurn(threadId: string, turnId: string): Promise<CodexTurn | undefined> {
+    const response = await this.request<ThreadReadResponse>(
+      "thread/read",
+      { threadId, includeTurns: true },
+      30_000
+    );
+    return response.thread.turns?.find((turn) => turn.id === turnId);
   }
 
   async waitForTurn(threadId: string, turnId: string, timeoutMs: number): Promise<CodexTurn> {

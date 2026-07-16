@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here.
 
+## 0.1.1 — 2026-07-16
+
+- Added French labels for project states, utility keys, and the Stream Deck action catalog.
+- Recovered completed status turns with `thread/read` when notifications omit unloaded turn items.
+- Added a short six-step attention pulse when a task enters an urgent state.
+- Kept the pulse bounded and restored the normal key image automatically.
+
 ## 0.1.0 — 2026-07-15
 
 - Initial public release of Codex Control for Stream Deck.

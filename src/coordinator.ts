@@ -8,7 +8,7 @@ import streamDeck, { type Action } from "@elgato/streamdeck";
 import type { JsonValue } from "@elgato/utils";
 
 import { CacheStore } from "./cache.js";
-import { CodexAppServer, RpcError } from "./codex-app-server.js";
+import { CodexAppServer, RpcError, turnNeedsHydration } from "./codex-app-server.js";
 import type {
   CacheFile,
   CodexThread,
@@ -495,12 +495,16 @@ export class Coordinator {
     this.#activeTurns.set(project.primaryThreadId, response.turn.id);
     await this.#rebuildProjects();
     try {
-      const turn = await this.#client.waitForTurn(
+      let turn = await this.#client.waitForTurn(
         project.primaryThreadId,
         response.turn.id,
         this.#settings.statusTurnTimeoutSeconds * 1_000
       );
       if (turn.status !== "completed") throw new Error(turn.error?.message || `Status turn ${turn.status}`);
+      if (turnNeedsHydration(turn)) {
+        const hydrated = await this.#client.readTurn(project.primaryThreadId, response.turn.id);
+        if (hydrated) turn = hydrated;
+      }
       const output = lastAgentMessage(turn);
       const parsed = output ? parseStructuredStatus(output) : { error: "Status turn returned no final message" };
       if (!parsed.report) {

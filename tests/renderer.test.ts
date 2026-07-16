@@ -39,7 +39,7 @@ describe("key renderer", () => {
     });
     expect(svg).toContain("Status");
     expect(svg).toContain("Dashboard");
-    expect(svg).toContain("NO TASK");
+    expect(svg).toContain("AUCUNE");
   });
 
   it("uses an explicit status action label for stale projects", () => {
@@ -60,6 +60,16 @@ describe("key renderer", () => {
         recencyAt: 1
       }
     });
-    expect(svg).toContain("HOLD TO CHECK");
+    expect(svg).toContain("MAINTENIR");
+  });
+
+  it("renders a prominent but optional attention pulse", () => {
+    const svg = renderProjectSvg({
+      connection: "auth_required",
+      freshMinutes: 15,
+      staleMinutes: 120,
+      attentionPulse: true
+    });
+    expect(svg).toContain('stroke-width="6"');
   });
 });

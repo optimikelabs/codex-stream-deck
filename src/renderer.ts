@@ -45,34 +45,35 @@ export interface RenderOptions {
   showFreshness?: boolean;
   showAttentionCount?: boolean;
   displayNameOverride?: string;
+  attentionPulse?: boolean;
   now?: number;
 }
 
 function statusIcon(label: string, color: string): string {
   const stroke = `fill="none" stroke="${color}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"`;
   switch (label) {
-    case "DONE":
+    case "TERMINÉ":
       return `<path d="m20 27 6 6 12-14" ${stroke}/>`;
-    case "RUNNING":
-    case "WORKING":
-    case "ACTIVE?":
+    case "ANALYSE":
+    case "EN COURS":
+    case "ACTIF ?":
       return `<path d="m23 18 16 9-16 9z" fill="${color}"/>`;
-    case "REVIEW":
+    case "À RELIRE":
       return `<path d="M17 27s5-8 12-8 12 8 12 8-5 8-12 8-12-8-12-8Z" ${stroke}/><circle cx="29" cy="27" r="3" fill="${color}"/>`;
-    case "FAILED":
-    case "ERROR":
+    case "ÉCHEC":
+    case "ERREUR":
     case "INCOMPAT":
-    case "BLOCKED":
+    case "BLOQUÉ":
       return `<path d="m20 19 18 17m0-17L20 36" ${stroke}/>`;
-    case "PAUSED":
+    case "PAUSE":
       return `<path d="M23 19v16m12-16v16" ${stroke}/>`;
-    case "APPROVAL":
-    case "INPUT":
-    case "IN CODEX":
-    case "SETUP":
-    case "AUTH":
+    case "À VALIDER":
+    case "RÉPONSE":
+    case "DANS CODEX":
+    case "CONFIG":
+    case "CONNEXION":
       return `<path d="M29 18v12" ${stroke}/><circle cx="29" cy="36" r="2.5" fill="${color}"/>`;
-    case "OFFLINE":
+    case "HORS LIGNE":
       return `<path d="M18 25c6-6 16-6 22 0M22 30c4-4 10-4 14 0M29 36h.1M18 18l22 20" ${stroke}/>`;
     default:
       return `<circle cx="29" cy="27" r="9" ${stroke}/><circle cx="29" cy="27" r="2.5" fill="${color}"/>`;
@@ -114,12 +115,15 @@ export function renderProjectSvg(options: RenderOptions): string {
   const count = options.showAttentionCount !== false && attention > 0 ? String(Math.min(99, attention)) : "";
   const age = options.showFreshness === false ? "" : formatAge(options.project?.report?.observedAt, now);
   const footer = !options.project
-    ? "EMPTY SLOT"
+    ? "EMPLACEMENT LIBRE"
     : !age
       ? ""
       : age === "stale"
-        ? "HOLD TO CHECK"
-        : `UPDATED ${age.toUpperCase()}`;
+        ? "MAINTENIR"
+        : `MAJ ${age.toUpperCase()}`;
+  const pulse = options.attentionPulse
+    ? `<rect x="2" y="2" width="140" height="140" rx="18" fill="none" stroke="${display.color}" stroke-width="6" opacity=".95"/>`
+    : "";
   const pin = options.pinned
     ? `<path d="M116 5h22v22z" fill="${display.color}"/><circle cx="128" cy="15" r="3" fill="#080B12"/>`
     : "";
@@ -137,6 +141,7 @@ export function renderProjectSvg(options: RenderOptions): string {
   </defs>
   <rect width="144" height="144" rx="19" fill="#05070B"/>
   <rect x="3" y="3" width="138" height="138" rx="17" fill="url(#bg)" stroke="${display.color}" stroke-opacity=".34" stroke-width="2"/>
+  ${pulse}
   <rect x="8" y="11" width="96" height="32" rx="16" fill="${display.color}" opacity=".11"/>
   ${statusIcon(display.label, display.color)}
   <text x="48" y="32" font-family="Arial, sans-serif" font-size="11" font-weight="800" letter-spacing=".6" fill="${display.color}">${escapeXml(display.label.slice(0, 10))}</text>

@@ -101,30 +101,34 @@ export function deriveDisplayState(
   staleMinutes: number,
   now = Date.now()
 ): DisplayState {
-  if (connection === "setup") return state("SETUP", "⚙", "#FBBF24", "#33270B", true);
-  if (connection === "auth_required") return state("AUTH", "◆", "#FBBF24", "#33270B", true);
-  if (connection === "offline") return state("OFFLINE", "↯", "#D1D5DB", "#20242B", true, true);
+  if (connection === "setup") return state("CONFIG", "⚙", "#FBBF24", "#33270B", true);
+  if (connection === "auth_required") return state("CONNEXION", "◆", "#FBBF24", "#33270B", true);
+  if (connection === "offline") return state("HORS LIGNE", "↯", "#D1D5DB", "#20242B", true, true);
   if (connection === "incompatible") return state("INCOMPAT", "!", "#FB7185", "#3B1119", true);
-  if (!project) return state(connection === "starting" ? "STARTING" : "NO TASK", "·", "#9CA3AF", "#17191D");
+  if (!project) return state(connection === "starting" ? "DÉMARRAGE" : "AUCUNE", "·", "#9CA3AF", "#17191D");
 
   const freshness = freshnessFor(project.report?.observedAt, freshMinutes, staleMinutes, now);
   const stale = freshness === "stale";
   const workflow = project.report?.report.workflowStatus ?? "unknown";
-  if (project.runtimeStatus.type === "system_error") return state("ERROR", "×", "#FDA4AF", "#3B1119", true, stale);
-  if (workflow === "failed") return state("FAILED", "×", "#FDA4AF", "#3B1119", true, stale);
+  if (project.runtimeStatus.type === "system_error") return state("ERREUR", "×", "#FDA4AF", "#3B1119", true, stale);
+  if (workflow === "failed") return state("ÉCHEC", "×", "#FDA4AF", "#3B1119", true, stale);
   if (project.externalApproval || project.runtimeStatus.activeFlags.includes("waitingOnApproval"))
-    return state("APPROVAL", "!", "#FDE68A", "#3B2A0B", true, stale);
-  if (project.handoff) return state("IN CODEX", "↗", "#FDE68A", "#33270B", true, stale);
-  if (project.pluginTurnId) return state("RUNNING", "▶", "#93C5FD", "#102A43", false, stale);
+    return state("À VALIDER", "!", "#FDE68A", "#3B2A0B", true, stale);
+  if (project.handoff) return state("DANS CODEX", "↗", "#FDE68A", "#33270B", true, stale);
+  if (project.pluginTurnId) return state("ANALYSE", "▶", "#93C5FD", "#102A43", false, stale);
   if (project.runtimeStatus.activeFlags.includes("waitingOnUserInput") || workflow === "needs_input")
-    return state("INPUT", "?", "#FDE68A", "#33270B", true, stale);
-  if (workflow === "blocked") return state("BLOCKED", "■", "#FDBA74", "#3B2010", true, stale);
-  if (workflow === "ready_for_review") return state("REVIEW", "◉", "#C4B5FD", "#241A44", false, stale);
-  if (workflow === "done") return state("DONE", "✓", "#86EFAC", "#12301E", false, stale);
-  if (workflow === "paused") return state("PAUSED", "Ⅱ", "#D1D5DB", "#24272D", false, stale);
-  if (project.runtimeStatus.type === "active") return state("ACTIVE?", "▶", "#93C5FD", "#102A43", false, stale);
-  if (workflow === "working") return state("WORKING", "▶", "#93C5FD", "#102A43", false, stale);
-  return state("NO STATUS", "?", "#D1D5DB", "#20242B", false, true);
+    return state("RÉPONSE", "?", "#FDE68A", "#33270B", true, stale);
+  if (workflow === "blocked") return state("BLOQUÉ", "■", "#FDBA74", "#3B2010", true, stale);
+  if (workflow === "ready_for_review") return state("À RELIRE", "◉", "#C4B5FD", "#241A44", false, stale);
+  if (workflow === "done") return state("TERMINÉ", "✓", "#86EFAC", "#12301E", false, stale);
+  if (workflow === "paused") return state("PAUSE", "Ⅱ", "#D1D5DB", "#24272D", false, stale);
+  if (project.runtimeStatus.type === "active") return state("ACTIF ?", "▶", "#93C5FD", "#102A43", false, stale);
+  if (workflow === "working") return state("EN COURS", "▶", "#93C5FD", "#102A43", false, stale);
+  return state("À VÉRIFIER", "?", "#D1D5DB", "#20242B", false, true);
+}
+
+export function requiresAttentionPulse(display: DisplayState): boolean {
+  return ["À VALIDER", "RÉPONSE", "BLOQUÉ", "ÉCHEC", "ERREUR"].includes(display.label);
 }
 
 export function lastAgentMessage(turn: { items?: Array<{ type?: string; text?: unknown }> }): string | undefined {

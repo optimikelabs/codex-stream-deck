@@ -6,13 +6,15 @@ import streamDeck, {
   type PropertyInspectorDidAppearEvent,
   type SendToPluginEvent,
   SingletonAction,
-  type WillAppearEvent
+  type WillAppearEvent,
+  type WillDisappearEvent
 } from "@elgato/streamdeck";
 import type { JsonValue } from "@elgato/utils";
 
 import { coordinator } from "./coordinator.js";
 import type { ProjectState } from "./domain.js";
 import { renderProjectSvg, renderUtilitySvg, svgDataUrl, type UtilityIcon } from "./renderer.js";
+import { deriveDisplayState, requiresAttentionPulse } from "./status.js";
 import {
   normalizeSlotSettings,
   normalizeTargetSettings,
@@ -40,6 +42,8 @@ async function sendInspectorState(action: KeyAction, project?: ProjectState): Pr
 export class ProjectSlotAction extends SingletonAction<SlotSettingsJson> {
   readonly #pressedAt = new Map<string, number>();
   readonly #rendered = new Map<string, { svg: string; at: number }>();
+  readonly #urgent = new Map<string, boolean>();
+  readonly #pulseTimers = new Map<string, NodeJS.Timeout>();
   #renderScheduled = false;
 
   constructor() {
@@ -50,6 +54,15 @@ export class ProjectSlotAction extends SingletonAction<SlotSettingsJson> {
   override async onWillAppear(event: WillAppearEvent<SlotSettingsJson>): Promise<void> {
     if (!event.action.isKey()) return;
     await this.#render(event.action, event.payload.settings);
+  }
+
+  override onWillDisappear(event: WillDisappearEvent<SlotSettingsJson>): void {
+    this.#pressedAt.delete(event.action.id);
+    this.#rendered.delete(event.action.id);
+    this.#urgent.delete(event.action.id);
+    const timer = this.#pulseTimers.get(event.action.id);
+    if (timer) clearTimeout(timer);
+    this.#pulseTimers.delete(event.action.id);
   }
 
   override onKeyDown(event: KeyDownEvent<SlotSettingsJson>): void {
@@ -107,6 +120,15 @@ export class ProjectSlotAction extends SingletonAction<SlotSettingsJson> {
   async #render(key: KeyAction<SlotSettingsJson>, raw: SlotSettingsJson): Promise<void> {
     const settings = normalizeSlotSettings(raw);
     const project = coordinator.projectForSlot(raw, coordinateIndex(key));
+    const display = deriveDisplayState(
+      project,
+      coordinator.connection,
+      coordinator.settings.freshMinutes,
+      coordinator.settings.staleMinutes
+    );
+    const pulseEligible = requiresAttentionPulse(display);
+    const becameUrgent = pulseEligible && this.#urgent.get(key.id) !== true;
+    this.#urgent.set(key.id, pulseEligible);
     const svg = renderProjectSvg({
       project,
       connection: coordinator.connection,
@@ -122,6 +144,37 @@ export class ProjectSlotAction extends SingletonAction<SlotSettingsJson> {
     this.#rendered.set(key.id, { svg, at: Date.now() });
     await key.setImage(svgDataUrl(svg));
     await key.setTitle(undefined);
+    if (becameUrgent) this.#pulseAttention(key, raw);
+  }
+
+  #pulseAttention(key: KeyAction<SlotSettingsJson>, raw: SlotSettingsJson): void {
+    const previousTimer = this.#pulseTimers.get(key.id);
+    if (previousTimer) clearTimeout(previousTimer);
+    let step = 0;
+    const tick = async (): Promise<void> => {
+      const settings = normalizeSlotSettings(raw);
+      const project = coordinator.projectForSlot(raw, coordinateIndex(key));
+      const svg = renderProjectSvg({
+        project,
+        connection: coordinator.connection,
+        freshMinutes: coordinator.settings.freshMinutes,
+        staleMinutes: coordinator.settings.staleMinutes,
+        pinned: settings.slotMode === "pinned",
+        showFreshness: settings.showFreshness,
+        showAttentionCount: settings.showAttentionCount,
+        displayNameOverride: settings.displayNameOverride,
+        attentionPulse: step % 2 === 0
+      });
+      await key.setImage(svgDataUrl(svg));
+      step += 1;
+      if (step < 6) this.#pulseTimers.set(key.id, setTimeout(() => void tick(), 600));
+      else {
+        this.#pulseTimers.delete(key.id);
+        this.#rendered.delete(key.id);
+        await this.#render(key, raw);
+      }
+    };
+    void tick();
   }
 }
 
@@ -165,7 +218,7 @@ abstract class UtilityAction<T extends TargetActionSettingsJson = TargetActionSe
 
 @action({ UUID: "com.codexstreamdeck.control.refresh" })
 export class RefreshAllAction extends UtilityAction {
-  readonly label = "Refresh";
+  readonly label = "Actualiser";
   readonly icon = "refresh" as const;
 
   override onKeyDown(event: KeyDownEvent<TargetActionSettingsJson>): Promise<void> {
@@ -175,7 +228,7 @@ export class RefreshAllAction extends UtilityAction {
 
 @action({ UUID: "com.codexstreamdeck.control.new-task" })
 export class NewTaskAction extends UtilityAction {
-  readonly label = "New Task";
+  readonly label = "Nouvelle";
   readonly icon = "new" as const;
   override color = "#86EFAC";
   override background = "#0A281B";
@@ -188,7 +241,7 @@ export class NewTaskAction extends UtilityAction {
 
 @action({ UUID: "com.codexstreamdeck.control.open-editor" })
 export class OpenEditorAction extends UtilityAction {
-  readonly label = "Open Code";
+  readonly label = "Code";
   readonly icon = "editor" as const;
   override color = "#93C5FD";
   override background = "#0B1D38";
@@ -201,7 +254,7 @@ export class OpenEditorAction extends UtilityAction {
 
 @action({ UUID: "com.codexstreamdeck.control.review" })
 export class ReviewChangesAction extends UtilityAction {
-  readonly label = "Review";
+  readonly label = "À relire";
   readonly icon = "review" as const;
   override color = "#C4B5FD";
   override background = "#21133B";
@@ -214,7 +267,7 @@ export class ReviewChangesAction extends UtilityAction {
 
 @action({ UUID: "com.codexstreamdeck.control.interrupt" })
 export class InterruptAction extends UtilityAction {
-  readonly label = "Interrupt";
+  readonly label = "Arrêter";
   readonly icon = "interrupt" as const;
   override color = "#FDA4AF";
   override background = "#3A111B";
@@ -222,7 +275,7 @@ export class InterruptAction extends UtilityAction {
 
   override async onKeyDown(event: KeyDownEvent<TargetActionSettingsJson>): Promise<void> {
     this.#pressedAt.set(event.action.id, Date.now());
-    await event.action.setImage(svgDataUrl(renderUtilitySvg("Hold", "hold", this.color, this.background)));
+    await event.action.setImage(svgDataUrl(renderUtilitySvg("Maintenir", "hold", this.color, this.background)));
   }
 
   override async onKeyUp(event: KeyUpEvent<TargetActionSettingsJson>): Promise<void> {
@@ -245,7 +298,7 @@ export class InterruptAction extends UtilityAction {
 
 @action({ UUID: "com.codexstreamdeck.control.health" })
 export class HealthAction extends UtilityAction {
-  readonly label = "Health";
+  readonly label = "Connexion";
   readonly icon = "health" as const;
 
   constructor() {
@@ -269,7 +322,7 @@ export class HealthAction extends UtilityAction {
 
   async #renderKey(key: KeyAction<TargetActionSettingsJson>): Promise<void> {
     const connected = coordinator.connection === "connected";
-    const label = connected ? "Connected" : coordinator.connection;
+    const label = connected ? "Connecté" : "Hors ligne";
     await key.setImage(
       svgDataUrl(
         renderUtilitySvg(
@@ -286,7 +339,7 @@ export class HealthAction extends UtilityAction {
 
 @action({ UUID: "com.codexstreamdeck.control.settings" })
 export class CodexSettingsAction extends UtilityAction {
-  readonly label = "Settings";
+  readonly label = "Réglages";
   readonly icon = "settings" as const;
   override color = "#A5B4FC";
   override background = "#15182F";

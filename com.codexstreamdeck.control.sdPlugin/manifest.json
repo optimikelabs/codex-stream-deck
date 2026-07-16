@@ -2,10 +2,10 @@
   "$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
   "Actions": [
     {
-      "Name": "Recent Codex Project",
+      "Name": "Tâche Codex récente",
       "UUID": "com.codexstreamdeck.control.project-slot",
       "Icon": "imgs/action-project",
-      "Tooltip": "Open a recent Codex task; hold for a safe status refresh.",
+      "Tooltip": "Ouvrir une tâche Codex récente ; maintenir pour actualiser son statut.",
       "Controllers": [
         "Keypad"
       ],
@@ -18,10 +18,10 @@
       ]
     },
     {
-      "Name": "Refresh Codex Projects",
+      "Name": "Actualiser les tâches Codex",
       "UUID": "com.codexstreamdeck.control.refresh",
       "Icon": "imgs/action-refresh",
-      "Tooltip": "Refresh Codex thread metadata and the local notify spool.",
+      "Tooltip": "Actualiser les métadonnées des tâches et les notifications locales.",
       "Controllers": [
         "Keypad"
       ],
@@ -34,10 +34,10 @@
       ]
     },
     {
-      "Name": "New Codex Task",
+      "Name": "Nouvelle tâche Codex",
       "UUID": "com.codexstreamdeck.control.new-task",
       "Icon": "imgs/action-new",
-      "Tooltip": "Start a configured task in the selected project.",
+      "Tooltip": "Démarrer une tâche configurée dans le projet sélectionné.",
       "Controllers": [
         "Keypad"
       ],
@@ -50,10 +50,10 @@
       ]
     },
     {
-      "Name": "Open Project in Editor",
+      "Name": "Ouvrir le projet dans l’éditeur",
       "UUID": "com.codexstreamdeck.control.open-editor",
       "Icon": "imgs/action-editor",
-      "Tooltip": "Open the selected Codex project in the configured editor.",
+      "Tooltip": "Ouvrir le projet Codex sélectionné dans l’éditeur configuré.",
       "Controllers": [
         "Keypad"
       ],
@@ -66,10 +66,10 @@
       ]
     },
     {
-      "Name": "Review Project Changes",
+      "Name": "Relire les modifications",
       "UUID": "com.codexstreamdeck.control.review",
       "Icon": "imgs/action-review",
-      "Tooltip": "Start a read-only review of uncommitted changes.",
+      "Tooltip": "Lancer une relecture en lecture seule des modifications non commitées.",
       "Controllers": [
         "Keypad"
       ],
@@ -82,10 +82,10 @@
       ]
     },
     {
-      "Name": "Interrupt Codex Turn",
+      "Name": "Interrompre le tour Codex",
       "UUID": "com.codexstreamdeck.control.interrupt",
       "Icon": "imgs/action-interrupt",
-      "Tooltip": "Hold to interrupt a turn started by this plugin.",
+      "Tooltip": "Maintenir pour interrompre un tour démarré par ce plugin.",
       "Controllers": [
         "Keypad"
       ],
@@ -98,10 +98,10 @@
       ]
     },
     {
-      "Name": "Codex Connection Health",
+      "Name": "État de la connexion Codex",
       "UUID": "com.codexstreamdeck.control.health",
       "Icon": "imgs/action-health",
-      "Tooltip": "Show connection health; press to refresh or reconnect.",
+      "Tooltip": "Afficher la connexion ; appuyer pour actualiser ou reconnecter.",
       "Controllers": [
         "Keypad"
       ],
@@ -114,10 +114,10 @@
       ]
     },
     {
-      "Name": "Open Codex Settings",
+      "Name": "Ouvrir les réglages Codex",
       "UUID": "com.codexstreamdeck.control.settings",
       "Icon": "imgs/action-settings",
-      "Tooltip": "Open Codex settings.",
+      "Tooltip": "Ouvrir les réglages Codex.",
       "Controllers": [
         "Keypad"
       ],
@@ -130,10 +130,10 @@
       ]
     },
     {
-      "Name": "Open Codex Skills",
+      "Name": "Ouvrir les skills Codex",
       "UUID": "com.codexstreamdeck.control.skills",
       "Icon": "imgs/action-skills",
-      "Tooltip": "Open the Codex skills page.",
+      "Tooltip": "Ouvrir la page des skills Codex.",
       "Controllers": [
         "Keypad"
       ],
@@ -147,12 +147,12 @@
     }
   ],
   "Author": "Codex Stream Deck Contributors",
-  "Category": "Codex Control",
+  "Category": "Contrôle Codex FR",
   "CategoryIcon": "imgs/category",
   "CodePath": "bin/plugin.js",
-  "Description": "Monitor recent Codex projects, open exact tasks, request safe status updates, and trigger common Codex actions.",
+  "Description": "Suivre les tâches Codex récentes, ouvrir la bonne tâche et demander un statut fiable.",
   "Icon": "imgs/plugin",
-  "Name": "Codex Control",
+  "Name": "Contrôle Codex FR",
   "Nodejs": {
     "Version": "24"
   },
@@ -172,5 +172,5 @@
     "MinimumVersion": "7.1"
   },
   "UUID": "com.codexstreamdeck.control",
-  "Version": "0.1.0.0"
+  "Version": "0.1.1.0"
 }

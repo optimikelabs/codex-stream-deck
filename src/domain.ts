@@ -77,6 +77,7 @@ export interface CodexTurn {
   id: string;
   status: "completed" | "interrupted" | "failed" | "inProgress" | string;
   items: CodexThreadItem[];
+  itemsView?: "notLoaded" | string;
   error?: { message?: string } | null;
 }
 

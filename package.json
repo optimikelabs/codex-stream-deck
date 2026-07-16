@@ -1,11 +1,16 @@
 {
   "name": "codex-stream-deck",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "description": "A Stream Deck control surface for local Codex projects and tasks.",
   "license": "MIT",
-  "keywords": ["codex", "stream-deck", "productivity", "developer-tools"],
+  "keywords": [
+    "codex",
+    "stream-deck",
+    "productivity",
+    "developer-tools"
+  ],
   "scripts": {
     "build": "rollup --config",
     "dev": "rollup --config --watch",

@@ -11,11 +11,12 @@ This is an unofficial community project and is not affiliated with or endorsed b
 ## Features
 
 - Meaningful Codex task titles across two lines
-- Live states such as `WORKING`, `INPUT`, `APPROVAL`, `REVIEW`, `DONE`, and `FAILED`
-- Freshness labels such as `UPDATED 20M` and `HOLD TO CHECK`
+- États en français comme `EN COURS`, `RÉPONSE`, `À VALIDER`, `À RELIRE`, `TERMINÉ` et `ÉCHEC`
+- Fraîcheur lisible avec `MAJ 20M` et `MAINTENIR`
+- Signal lumineux court lorsqu’une tâche demande une réponse ou une validation
 - Tap to open the exact `codex://threads/<id>` task
 - Hold to run a schema-constrained status check without project-file writes or tool network access
-- Refresh, New Task, Open Code, Review, Interrupt, Health, Settings, and Skills actions
+- Actions Actualiser, Nouvelle, Code, À relire, Arrêter, Connexion, Réglages et Skills
 - Optional completion updates from Codex desktop, CLI, and IDE through a loopback-only notify bridge
 - Atomic local cache, bounded payloads, secret-redacted logs, and defensive approval rejection
 
@@ -65,12 +66,12 @@ Project keys automatically follow physical position unless you assign a slot num
 | Label | Meaning |
 | --- | --- |
 | `WORKING` / `RUNNING` | Codex or the plugin reports active work. |
-| `INPUT` / `APPROVAL` | The task needs attention in Codex. |
+| `RÉPONSE` / `À VALIDER` | La tâche demande une intervention dans Codex. |
 | `REVIEW` | Work is ready to review. |
-| `DONE` | A validated workflow report says the objective is complete. |
+| `TERMINÉ` | Un rapport de statut valide indique que l’objectif est terminé. |
 | `BLOCKED` / `FAILED` | The report identified a blocker or failure. |
-| `NO STATUS` | The task has not produced a structured status report yet. |
-| `HOLD TO CHECK` | Hold that project key for about one second to request a fresh status. |
+| `À VÉRIFIER` | La tâche n’a pas encore produit de rapport structuré. |
+| `MAINTENIR` | Maintenir la touche environ une seconde pour demander un statut frais. |
 | `UPDATED 20M` | The latest structured status was received 20 minutes ago. |
 
 A quick tap opens the task. A hold of at least 650 ms starts a read-only status turn. The check can update Codex task-goal metadata, but it cannot edit project files, use tool network access, or approve an operation.
