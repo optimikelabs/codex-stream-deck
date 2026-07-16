@@ -172,6 +172,21 @@ export class Coordinator {
     await this.#saveSettings({ presetEffort: next ?? "" });
   }
 
+  effortIsAvailable(effort: ReasoningEffort): boolean {
+    const model = this.selectedModel();
+    return (model ? [model] : this.#models).some((candidate) =>
+      candidate.supportedReasoningEfforts.some((entry) => entry.reasoningEffort === effort)
+    );
+  }
+
+  async selectEffort(effort: ReasoningEffort | ""): Promise<void> {
+    const model = this.selectedModel();
+    if (model && effort && !model.supportedReasoningEfforts.some((entry) => entry.reasoningEffort === effort)) {
+      throw new Error(`${model.displayName} does not support effort ${effort}`);
+    }
+    await this.#saveSettings({ presetEffort: effort });
+  }
+
   async clearPreset(): Promise<void> {
     await this.#saveSettings({ presetModel: "", presetEffort: "" });
   }

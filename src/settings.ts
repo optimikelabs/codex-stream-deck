@@ -55,6 +55,12 @@ export interface ModelPresetSettings {
 
 export type ModelPresetSettingsJson = ModelPresetSettings & JsonObject;
 
+export interface EffortPresetSettings {
+  effort?: "cycle" | ReasoningEffort;
+}
+
+export type EffortPresetSettingsJson = EffortPresetSettings & JsonObject;
+
 export type TargetActionSettingsJson = TargetActionSettings & JsonObject;
 
 export const DEFAULT_GLOBAL_SETTINGS: GlobalSettings = {
@@ -145,6 +151,12 @@ export function normalizeModelPresetSettings(settings: ModelPresetSettings | und
   return { modelAlias: ["sol", "terra", "luna"].includes(settings?.modelAlias ?? "")
     ? (settings?.modelAlias as "sol" | "terra" | "luna")
     : "auto" };
+}
+
+export function normalizeEffortPresetSettings(settings: EffortPresetSettings | undefined): Required<EffortPresetSettings> {
+  return { effort: ["low", "medium", "high", "xhigh", "max", "ultra"].includes(settings?.effort ?? "")
+    ? (settings?.effort as ReasoningEffort)
+    : "cycle" };
 }
 
 export function normalizeSlotSettings(settings: SlotSettings | undefined): Required<SlotSettings> {

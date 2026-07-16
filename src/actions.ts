@@ -13,13 +13,15 @@ import type { JsonValue } from "@elgato/utils";
 
 import { coordinator } from "./coordinator.js";
 import type { ProjectState } from "./domain.js";
-import { renderProjectSvg, renderUtilitySvg, svgDataUrl, type UtilityIcon } from "./renderer.js";
+import { renderModelPresetSvg, renderProjectSvg, renderUtilitySvg, svgDataUrl, type UtilityIcon } from "./renderer.js";
 import { deriveDisplayState, requiresAttentionPulse } from "./status.js";
 import {
   normalizeSlotSettings,
   normalizeModelPresetSettings,
+  normalizeEffortPresetSettings,
   normalizeTargetSettings,
   type ModelPresetSettingsJson,
+  type EffortPresetSettingsJson,
   type SlotSettingsJson,
   type TargetActionSettingsJson
 } from "./settings.js";
@@ -409,28 +411,42 @@ export class ModelPresetAction extends SingletonAction<ModelPresetSettingsJson> 
     const model = alias === "auto" ? undefined : coordinator.modelForAlias(alias);
     const selected = alias === "auto" ? !coordinator.settings.presetModel : model?.model === coordinator.settings.presetModel;
     const available = alias === "auto" || !!model;
-    const label = alias === "auto" ? "Auto" : available ? alias : `${alias} ?`;
-    await key.setImage(svgDataUrl(renderUtilitySvg(label, alias === "auto" ? "auto" : available ? "model" : "warning",
-      selected ? "#86EFAC" : available ? "#C4B5FD" : "#FBBF24",
-      selected ? "#0A281B" : "#21133B")));
+    const label = alias === "auto"
+      ? selected ? "Défaut actif" : "Modèle défaut"
+      : !available ? `${alias} absent` : selected ? `${alias} actif` : alias;
+    const svg = alias === "auto"
+      ? renderUtilitySvg(label, "auto", selected ? "#86EFAC" : "#C4B5FD", selected ? "#0A281B" : "#21133B")
+      : renderModelPresetSvg(alias, selected, available);
+    await key.setImage(svgDataUrl(svg));
     await key.setTitle(undefined);
   }
 }
 
 @action({ UUID: "com.codexstreamdeck.control.effort-preset" })
-export class EffortPresetAction extends SingletonAction<TargetActionSettingsJson> {
+export class EffortPresetAction extends SingletonAction<EffortPresetSettingsJson> {
+  readonly #pressedAt = new Map<string, number>();
+
   constructor() {
     super();
     coordinator.onChange(() => void this.#renderAll());
   }
 
-  override async onWillAppear(event: WillAppearEvent<TargetActionSettingsJson>): Promise<void> {
-    if (event.action.isKey()) await this.#renderKey(event.action);
+  override async onWillAppear(event: WillAppearEvent<EffortPresetSettingsJson>): Promise<void> {
+    if (event.action.isKey()) await this.#renderKey(event.action, event.payload.settings);
   }
 
-  override async onKeyDown(event: KeyDownEvent<TargetActionSettingsJson>): Promise<void> {
+  override onKeyDown(event: KeyDownEvent<EffortPresetSettingsJson>): void {
+    this.#pressedAt.set(event.action.id, Date.now());
+  }
+
+  override async onKeyUp(event: KeyUpEvent<EffortPresetSettingsJson>): Promise<void> {
+    const elapsed = Date.now() - (this.#pressedAt.get(event.action.id) ?? Date.now());
+    this.#pressedAt.delete(event.action.id);
+    const setting = normalizeEffortPresetSettings(event.payload.settings).effort;
     try {
-      await coordinator.cycleEffort();
+      if (elapsed >= coordinator.settings.holdMilliseconds) await coordinator.selectEffort("");
+      else if (setting === "cycle") await coordinator.cycleEffort();
+      else await coordinator.selectEffort(setting);
       await event.action.showOk();
     } catch {
       await event.action.showAlert();
@@ -438,13 +454,21 @@ export class EffortPresetAction extends SingletonAction<TargetActionSettingsJson
   }
 
   async #renderAll(): Promise<void> {
-    await Promise.all([...this.actions].filter((item) => item.isKey()).map((item) => this.#renderKey(item as KeyAction<TargetActionSettingsJson>)));
+    await Promise.all([...this.actions].filter((item) => item.isKey()).map(async (item) => {
+      const key = item as KeyAction<EffortPresetSettingsJson>;
+      await this.#renderKey(key, await key.getSettings<EffortPresetSettingsJson>());
+    }));
   }
 
-  async #renderKey(key: KeyAction<TargetActionSettingsJson>): Promise<void> {
-    const effort = coordinator.settings.presetEffort || "auto";
-    const labels: Record<string, string> = { auto: "Effort auto", low: "Léger", medium: "Moyen", high: "Élevé", xhigh: "Très élevé", max: "Max", ultra: "Ultra" };
-    await key.setImage(svgDataUrl(renderUtilitySvg(labels[effort] ?? effort, "effort", "#FDE68A", "#33270B")));
+  async #renderKey(key: KeyAction<EffortPresetSettingsJson>, raw: EffortPresetSettingsJson): Promise<void> {
+    const setting = normalizeEffortPresetSettings(raw).effort;
+    const current = coordinator.settings.presetEffort;
+    const labels: Record<string, string> = { cycle: current || "Par défaut", low: "Léger", medium: "Moyen", high: "Élevé", xhigh: "Très élevé", max: "Max", ultra: "Ultra" };
+    const available = setting === "cycle" || coordinator.effortIsAvailable(setting);
+    const selected = setting !== "cycle" && setting === current;
+    const baseLabel = labels[setting] ?? setting;
+    const label = !available ? `${baseLabel} absent` : selected ? `${baseLabel} actif` : baseLabel;
+    await key.setImage(svgDataUrl(renderUtilitySvg(label, available ? "effort" : "warning", selected ? "#86EFAC" : available ? "#FDE68A" : "#FBBF24", selected ? "#0A281B" : "#33270B")));
     await key.setTitle(undefined);
   }
 }

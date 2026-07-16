@@ -48,17 +48,20 @@ Copy-Item -LiteralPath $manifest.FullName -Destination $backup
 $json = Get-Content -LiteralPath $manifest.FullName -Raw | ConvertFrom-Json -Depth 100
 $actions = $json.Controllers[0].Actions
 
-@($actions.PSObject.Properties) |
-  Where-Object { $_.Value.UUID -in @("com.codexstreamdeck.control.model-preset", "com.codexstreamdeck.control.effort-preset") } |
-  ForEach-Object { $actions.PSObject.Properties.Remove($_.Name) }
+$alreadyInstalled = @($actions.PSObject.Properties | Where-Object {
+  $_.Value.UUID -in @("com.codexstreamdeck.control.model-preset", "com.codexstreamdeck.control.effort-preset")
+}).Count -gt 0
+if ($alreadyInstalled) {
+  Write-Output "Preset actions already exist; preserving the user's layout."
+  exit 0
+}
 
-$actions | Add-Member -NotePropertyName "0,3" -NotePropertyValue (New-HotkeyAction "MODÈLE") -Force
-$actions | Add-Member -NotePropertyName "1,3" -NotePropertyValue (New-HotkeyAction "EFFORT") -Force
-$actions | Add-Member -NotePropertyName "2,3" -NotePropertyValue (New-PluginAction "com.codexstreamdeck.control.model-preset" "Preset de modèle Codex" @{ modelAlias="auto" }) -Force
-$actions | Add-Member -NotePropertyName "3,3" -NotePropertyValue (New-PluginAction "com.codexstreamdeck.control.model-preset" "Preset de modèle Codex" @{ modelAlias="sol" }) -Force
-$actions | Add-Member -NotePropertyName "4,3" -NotePropertyValue (New-PluginAction "com.codexstreamdeck.control.model-preset" "Preset de modèle Codex" @{ modelAlias="terra" }) -Force
-$actions | Add-Member -NotePropertyName "5,3" -NotePropertyValue (New-PluginAction "com.codexstreamdeck.control.model-preset" "Preset de modèle Codex" @{ modelAlias="luna" }) -Force
-$actions | Add-Member -NotePropertyName "6,3" -NotePropertyValue (New-PluginAction "com.codexstreamdeck.control.effort-preset" "Preset d’effort Codex" @{}) -Force
+$actions | Add-Member -NotePropertyName "0,3" -NotePropertyValue (New-HotkeyAction "MODÈLE`nEFFORT") -Force
+$actions | Add-Member -NotePropertyName "1,3" -NotePropertyValue (New-PluginAction "com.codexstreamdeck.control.model-preset" "Preset de modèle Codex" @{ modelAlias="auto" }) -Force
+$actions | Add-Member -NotePropertyName "2,3" -NotePropertyValue (New-PluginAction "com.codexstreamdeck.control.model-preset" "Preset de modèle Codex" @{ modelAlias="sol" }) -Force
+$actions | Add-Member -NotePropertyName "3,3" -NotePropertyValue (New-PluginAction "com.codexstreamdeck.control.model-preset" "Preset de modèle Codex" @{ modelAlias="terra" }) -Force
+$actions | Add-Member -NotePropertyName "4,3" -NotePropertyValue (New-PluginAction "com.codexstreamdeck.control.model-preset" "Preset de modèle Codex" @{ modelAlias="luna" }) -Force
+$actions | Add-Member -NotePropertyName "5,3" -NotePropertyValue (New-PluginAction "com.codexstreamdeck.control.effort-preset" "Preset d’effort Codex" @{}) -Force
 
 $json | ConvertTo-Json -Depth 100 -Compress | Set-Content -LiteralPath $manifest.FullName -Encoding utf8
 Get-Content -LiteralPath $manifest.FullName -Raw | ConvertFrom-Json -Depth 100 | Out-Null

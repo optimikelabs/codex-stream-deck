@@ -186,3 +186,47 @@ export function renderUtilitySvg(
   <rect x="39" y="134" width="66" height="4" rx="2" fill="${color}"/>
 </svg>`;
 }
+
+export function renderModelPresetSvg(
+  alias: "sol" | "terra" | "luna",
+  selected: boolean,
+  available: boolean
+): string {
+  const accent = selected ? "#86EFAC" : available ? "#A5B4FC" : "#64748B";
+  const opacity = available ? 1 : 0.32;
+  const art = alias === "sol"
+    ? `<g opacity="${opacity}">
+        <g stroke="#FDBA2D" stroke-width="7" stroke-linecap="round">
+          <path d="M72 18v13M72 113v13M18 72h13M113 72h13M34 34l10 10M100 100l10 10M110 34l-10 10M44 100l-10 10"/>
+        </g>
+        <circle cx="72" cy="72" r="31" fill="url(#sun)"/>
+        <circle cx="62" cy="61" r="9" fill="#FFF7C2" opacity=".34"/>
+      </g>`
+    : alias === "terra"
+      ? `<g opacity="${opacity}">
+          <circle cx="72" cy="72" r="45" fill="url(#ocean)" stroke="#60A5FA" stroke-width="3"/>
+          <path d="M43 45c9-10 22-17 36-17l7 10-10 8-4 12-15 4-12-7zM88 54l16 5 8 13-9 8-2 17-15 14-12-8 3-17-10-9 7-13zM40 79l12 4 8 15-8 11c-10-8-17-18-20-30z" fill="#55C878"/>
+          <path d="M42 54c13 8 25 11 43 8M38 88c19-4 42-1 66 9" fill="none" stroke="#DBF4FF" stroke-width="4" opacity=".38" stroke-linecap="round"/>
+          <ellipse cx="57" cy="49" rx="13" ry="8" fill="#FFFFFF" opacity=".18" transform="rotate(-28 57 49)"/>
+        </g>`
+      : `<g opacity="${opacity}">
+          <circle cx="72" cy="72" r="46" fill="url(#moon)" stroke="#E2E8F0" stroke-width="3"/>
+          <circle cx="87" cy="59" r="10" fill="#94A3B8" opacity=".34"/>
+          <circle cx="55" cy="84" r="8" fill="#94A3B8" opacity=".3"/>
+          <circle cx="83" cy="94" r="5" fill="#94A3B8" opacity=".28"/>
+          <circle cx="52" cy="53" r="4" fill="#F8FAFC" opacity=".42"/>
+          <path d="M91 31c-19 10-31 29-31 49 0 16 7 29 19 38-28 4-53-18-53-46 0-25 20-46 45-46 7 0 14 2 20 5z" fill="#F8FAFC" opacity=".2"/>
+        </g>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">
+  <defs>
+    <radialGradient id="sun" cx="38%" cy="32%"><stop offset="0" stop-color="#FFF8B8"/><stop offset=".48" stop-color="#FFD34E"/><stop offset="1" stop-color="#F59E0B"/></radialGradient>
+    <radialGradient id="ocean" cx="35%" cy="28%"><stop offset="0" stop-color="#67E8F9"/><stop offset=".52" stop-color="#2383D8"/><stop offset="1" stop-color="#123F91"/></radialGradient>
+    <radialGradient id="moon" cx="35%" cy="28%"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".55" stop-color="#CBD5E1"/><stop offset="1" stop-color="#64748B"/></radialGradient>
+  </defs>
+  <rect width="144" height="144" rx="19" fill="#05070B"/>
+  <rect x="3" y="3" width="138" height="138" rx="17" fill="#0A0E16" stroke="${accent}" stroke-width="${selected ? 5 : 2}" stroke-opacity="${selected ? 1 : .42}"/>
+  ${art}
+  ${available ? "" : `<path d="M30 114 114 30" stroke="#FBBF24" stroke-width="7" stroke-linecap="round" opacity=".9"/>`}
+  ${selected ? `<circle cx="120" cy="120" r="10" fill="#86EFAC"/><path d="m115 120 4 4 7-9" fill="none" stroke="#052E1B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>` : ""}
+</svg>`;
+}
