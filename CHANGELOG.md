@@ -2,6 +2,24 @@
 
 All notable changes to this project are documented here.
 
+## 0.2.0 — 2026-07-16
+
+- Added dynamic model discovery through the official `model/list` App Server request.
+- Added Auto, Sol, Terra, and Luna preset keys whose availability follows the runtime model catalog.
+- Added an effort key that cycles only through the efforts supported by the selected model.
+- Added fixed keys for Léger, Moyen, Élevé, Très élevé, Max, and Ultra, with long-press reset to the model default.
+- Added text-free sun, Earth, and moon artwork for Sol, Terra, and Luna.
+- Applied active model and effort presets to plugin-owned task creation, including blank new-task composers.
+- Added a reversible installer for the XL preset row and native Model/Effort selector shortcuts.
+- Localized the preset controls and status summary in the Property Inspector.
+
+## 0.1.1 — 2026-07-16
+
+- Added French labels for project states, utility keys, and the Stream Deck action catalog.
+- Recovered completed status turns with `thread/read` when notifications omit unloaded turn items.
+- Added a short six-step attention pulse when a task enters an urgent state.
+- Kept the pulse bounded and restored the normal key image automatically.
+
 ## 0.1.0 — 2026-07-15
 
 - Initial public release of Codex Control for Stream Deck.

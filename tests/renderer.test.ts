@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { escapeXml, renderProjectSvg, renderUtilitySvg, splitProjectName, svgDataUrl } from "../src/renderer.js";
+import { escapeXml, renderModelPresetSvg, renderProjectSvg, renderUtilitySvg, splitProjectName, svgDataUrl } from "../src/renderer.js";
 
 describe("key renderer", () => {
   it("escapes hostile SVG content", () => {
@@ -39,7 +39,7 @@ describe("key renderer", () => {
     });
     expect(svg).toContain("Status");
     expect(svg).toContain("Dashboard");
-    expect(svg).toContain("NO TASK");
+    expect(svg).toContain("AUCUNE");
   });
 
   it("uses an explicit status action label for stale projects", () => {
@@ -60,6 +60,27 @@ describe("key renderer", () => {
         recencyAt: 1
       }
     });
-    expect(svg).toContain("HOLD TO CHECK");
+    expect(svg).toContain("MAINTENIR");
+  });
+
+  it("renders a prominent but optional attention pulse", () => {
+    const svg = renderProjectSvg({
+      connection: "auth_required",
+      freshMinutes: 15,
+      staleMinutes: 120,
+      attentionPulse: true
+    });
+    expect(svg).toContain('stroke-width="6"');
+  });
+
+  it("renders distinct text-free artwork for Sol, Terra, and Luna", () => {
+    const sol = renderModelPresetSvg("sol", false, true);
+    const terra = renderModelPresetSvg("terra", true, true);
+    const luna = renderModelPresetSvg("luna", false, true);
+    expect(sol).toContain('id="sun"');
+    expect(terra).toContain('id="ocean"');
+    expect(luna).toContain('id="moon"');
+    expect(terra).toContain("#86EFAC");
+    expect([sol, terra, luna].every((svg) => !svg.includes("<text"))).toBe(true);
   });
 });

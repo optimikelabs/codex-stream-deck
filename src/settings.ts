@@ -1,7 +1,8 @@
 import type { JsonObject } from "@elgato/utils";
+import type { ReasoningEffort } from "./domain.js";
 
 export interface GlobalSettings {
-  version: 1;
+  version: 2;
   codexPath: string;
   editorCommand: string;
   editorArgs: string[];
@@ -23,6 +24,8 @@ export interface GlobalSettings {
   maxStatusTurnsPerDay: number;
   statusTurnTimeoutSeconds: number;
   redactContentInLogs: boolean;
+  presetModel: string;
+  presetEffort: ReasoningEffort | "";
 }
 
 export type GlobalSettingsJson = GlobalSettings & JsonObject;
@@ -46,10 +49,22 @@ export interface TargetActionSettings {
   prompt?: string;
 }
 
+export interface ModelPresetSettings {
+  modelAlias?: "auto" | "sol" | "terra" | "luna";
+}
+
+export type ModelPresetSettingsJson = ModelPresetSettings & JsonObject;
+
+export interface EffortPresetSettings {
+  effort?: "cycle" | ReasoningEffort;
+}
+
+export type EffortPresetSettingsJson = EffortPresetSettings & JsonObject;
+
 export type TargetActionSettingsJson = TargetActionSettings & JsonObject;
 
 export const DEFAULT_GLOBAL_SETTINGS: GlobalSettings = {
-  version: 1,
+  version: 2,
   codexPath: "codex",
   editorCommand: "code",
   editorArgs: ["--reuse-window"],
@@ -70,7 +85,9 @@ export const DEFAULT_GLOBAL_SETTINGS: GlobalSettings = {
   autoRefreshStaleReports: false,
   maxStatusTurnsPerDay: 20,
   statusTurnTimeoutSeconds: 120,
-  redactContentInLogs: true
+  redactContentInLogs: true,
+  presetModel: "",
+  presetEffort: ""
 };
 
 const numberSetting = (value: unknown, fallback: number, min: number, max: number): number =>
@@ -90,7 +107,7 @@ export function normalizeGlobalSettings(input: Partial<GlobalSettings> | undefin
   const freshMinutes = numberSetting(raw.freshMinutes, 15, 1, 1440);
   const staleMinutes = Math.max(freshMinutes + 1, numberSetting(raw.staleMinutes, 120, 2, 10080));
   return {
-    version: 1,
+    version: 2,
     codexPath: stringSetting(raw.codexPath, "codex", 32_768),
     editorCommand: stringSetting(raw.editorCommand, "code", 32_768),
     editorArgs: Array.isArray(raw.editorArgs)
@@ -122,8 +139,24 @@ export function normalizeGlobalSettings(input: Partial<GlobalSettings> | undefin
     notifyBridgeEnabled: booleanSetting(raw.notifyBridgeEnabled, true),
     newTaskMode: raw.newTaskMode === "handoff" ? "handoff" : "plugin_owned",
     autoRefreshStaleReports: booleanSetting(raw.autoRefreshStaleReports, false),
-    redactContentInLogs: booleanSetting(raw.redactContentInLogs, true)
+    redactContentInLogs: booleanSetting(raw.redactContentInLogs, true),
+    presetModel: typeof raw.presetModel === "string" ? raw.presetModel.trim().slice(0, 200) : "",
+    presetEffort: ["low", "medium", "high", "xhigh", "max", "ultra"].includes(raw.presetEffort ?? "")
+      ? (raw.presetEffort as ReasoningEffort)
+      : ""
   };
+}
+
+export function normalizeModelPresetSettings(settings: ModelPresetSettings | undefined): Required<ModelPresetSettings> {
+  return { modelAlias: ["sol", "terra", "luna"].includes(settings?.modelAlias ?? "")
+    ? (settings?.modelAlias as "sol" | "terra" | "luna")
+    : "auto" };
+}
+
+export function normalizeEffortPresetSettings(settings: EffortPresetSettings | undefined): Required<EffortPresetSettings> {
+  return { effort: ["low", "medium", "high", "xhigh", "max", "ultra"].includes(settings?.effort ?? "")
+    ? (settings?.effort as ReasoningEffort)
+    : "cycle" };
 }
 
 export function normalizeSlotSettings(settings: SlotSettings | undefined): Required<SlotSettings> {

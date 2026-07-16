@@ -19,6 +19,19 @@ export type WorkflowStatus =
   | "unknown";
 export type VerificationState = "not_run" | "running" | "passed" | "failed" | "unknown";
 export type FreshnessState = "fresh" | "aging" | "stale";
+export type ReasoningEffort = "low" | "medium" | "high" | "xhigh" | "max" | "ultra";
+
+export interface CodexModel {
+  id: string;
+  model: string;
+  displayName: string;
+  hidden: boolean;
+  defaultReasoningEffort: ReasoningEffort;
+  supportedReasoningEfforts: Array<{
+    reasoningEffort: ReasoningEffort;
+    description: string;
+  }>;
+}
 
 export interface RuntimeStatus {
   type: RuntimeState;
@@ -77,6 +90,7 @@ export interface CodexTurn {
   id: string;
   status: "completed" | "interrupted" | "failed" | "inProgress" | string;
   items: CodexThreadItem[];
+  itemsView?: "notLoaded" | string;
   error?: { message?: string } | null;
 }
 

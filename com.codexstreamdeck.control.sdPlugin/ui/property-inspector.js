@@ -74,6 +74,8 @@ function showRelevantSections() {
   document.getElementById("project-settings").hidden = actionUuid !== projectAction;
   document.getElementById("target-settings").hidden = !targetActions.has(actionUuid);
   document.getElementById("new-task-settings").hidden = actionUuid !== "com.codexstreamdeck.control.new-task";
+  document.getElementById("model-preset-settings").hidden = actionUuid !== "com.codexstreamdeck.control.model-preset";
+  document.getElementById("effort-preset-settings").hidden = actionUuid !== "com.codexstreamdeck.control.effort-preset";
 }
 
 function renderSettings() {
@@ -131,6 +133,8 @@ function renderState(state) {
     ? `${state.project.name} · ${state.project.workflow} · ${state.project.runtime}`
     : `${state.projectCount || 0} recent projects`;
   document.getElementById("project-summary").textContent = summary;
+  const selectedModel = (state.models || []).find((model) => model.model === state.presetModel);
+  document.getElementById("preset-summary").textContent = `${selectedModel?.displayName || "Modèle par défaut"} · effort ${state.presetEffort || "par défaut"}`;
   const error = document.getElementById("last-error");
   error.textContent = state.lastError || "";
   error.hidden = !state.lastError;

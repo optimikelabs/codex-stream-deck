@@ -40,6 +40,8 @@ Runtime state and workflow state are deliberately separate:
 
 An idle runtime never implies completed work. `DONE` requires a schema-valid workflow report.
 
+Some app-server versions emit `turn/completed` with `itemsView: "notLoaded"` and no items. The coordinator then reads the thread with `includeTurns: true` and hydrates the matching turn before parsing its structured status.
+
 ## Project-key interaction
 
 ```mermaid

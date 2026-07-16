@@ -1,7 +1,7 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { EventEmitter } from "node:events";
 
-import type { CodexThread, CodexTurn } from "./domain.js";
+import type { CodexModel, CodexThread, CodexTurn } from "./domain.js";
 import type { DiagnosticLogger } from "./logger.js";
 
 type JsonRpcId = number | string;
@@ -79,6 +79,19 @@ export interface ThreadListResponse {
   nextCursor: string | null;
 }
 
+export interface ThreadReadResponse {
+  thread: CodexThread;
+}
+
+export interface ModelListResponse {
+  data: CodexModel[];
+  nextCursor: string | null;
+}
+
+export function turnNeedsHydration(turn: CodexTurn): boolean {
+  return turn.itemsView === "notLoaded" || !Array.isArray(turn.items) || turn.items.length === 0;
+}
+
 export class CodexAppServer extends EventEmitter {
   readonly #logger: DiagnosticLogger;
   #child: ChildProcessWithoutNullStreams | undefined;
@@ -139,7 +152,7 @@ export class CodexAppServer extends EventEmitter {
     const initialized = await this.request<Record<string, unknown>>(
       "initialize",
       {
-        clientInfo: { name: "codex_stream_deck", title: "Codex Stream Deck", version: "0.1.0" }
+        clientInfo: { name: "codex_stream_deck", title: "Codex Stream Deck", version: "0.2.0" }
       },
       15_000
     );
@@ -210,6 +223,19 @@ export class CodexAppServer extends EventEmitter {
       this.#logger.warn("thread/list filters unsupported; retrying compatible subset", { code: error.code });
       return this.request<ThreadListResponse>("thread/list", { limit: 100, archived: false }, 30_000);
     }
+  }
+
+  async listModels(): Promise<ModelListResponse> {
+    return this.request<ModelListResponse>("model/list", { limit: 100, includeHidden: false }, 30_000);
+  }
+
+  async readTurn(threadId: string, turnId: string): Promise<CodexTurn | undefined> {
+    const response = await this.request<ThreadReadResponse>(
+      "thread/read",
+      { threadId, includeTurns: true },
+      30_000
+    );
+    return response.thread.turns?.find((turn) => turn.id === turnId);
   }
 
   async waitForTurn(threadId: string, turnId: string, timeoutMs: number): Promise<CodexTurn> {

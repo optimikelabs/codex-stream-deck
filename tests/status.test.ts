@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { ProjectState, StatusEnvelope, StatusReport } from "../src/domain.js";
-import { deriveDisplayState, parseStatusMarker, parseStructuredStatus } from "../src/status.js";
+import { deriveDisplayState, parseStatusMarker, parseStructuredStatus, requiresAttentionPulse } from "../src/status.js";
 
 const report: StatusReport = {
   version: 1,
@@ -46,7 +46,7 @@ describe("status parsing", () => {
 
 describe("display precedence", () => {
   it("never treats not-loaded runtime as done without workflow evidence", () => {
-    expect(deriveDisplayState(project(), "connected", 15, 120).label).toBe("NO STATUS");
+    expect(deriveDisplayState(project(), "connected", 15, 120).label).toBe("À VÉRIFIER");
   });
 
   it("uses workflow evidence independently from runtime state", () => {
@@ -61,13 +61,20 @@ describe("display precedence", () => {
       runtimeStatus: { type: "not_loaded", activeFlags: [] },
       report: { ...report, workflowStatus: "done" }
     };
-    expect(deriveDisplayState(project(envelope), "connected", 15, 120).label).toBe("DONE");
+    expect(deriveDisplayState(project(envelope), "connected", 15, 120).label).toBe("TERMINÉ");
   });
 
   it("puts authoritative approval above active work", () => {
     const value = project();
     value.pluginTurnId = "turn";
     value.runtimeStatus = { type: "active", activeFlags: ["waitingOnApproval"] };
-    expect(deriveDisplayState(value, "connected", 15, 120).label).toBe("APPROVAL");
+    expect(deriveDisplayState(value, "connected", 15, 120).label).toBe("À VALIDER");
+  });
+
+  it("pulses only for task states that require attention", () => {
+    expect(requiresAttentionPulse(deriveDisplayState(undefined, "offline", 15, 120))).toBe(false);
+    const value = project();
+    value.runtimeStatus = { type: "active", activeFlags: ["waitingOnUserInput"] };
+    expect(requiresAttentionPulse(deriveDisplayState(value, "connected", 15, 120))).toBe(true);
   });
 });

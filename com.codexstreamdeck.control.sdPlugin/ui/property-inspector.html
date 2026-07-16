@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="fr">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -10,8 +10,8 @@
   <body>
     <main>
       <section class="status-card">
-        <div><span id="connection-dot" class="dot"></span><strong id="connection">Starting</strong></div>
-        <div id="project-summary" class="muted">Waiting for project state…</div>
+        <div><span id="connection-dot" class="dot"></span><strong id="connection">Démarrage</strong></div>
+        <div id="project-summary" class="muted">Chargement de l’état…</div>
         <div id="last-error" class="error" hidden></div>
       </section>
 
@@ -37,6 +37,23 @@
         <h2>New task</h2>
         <label>Prompt template<textarea data-scope="action" data-key="prompt" rows="5" placeholder="Leave blank to open a new Codex composer without submitting."></textarea></label>
         <p class="hint">Plugin-owned tasks use approval policy “never,” project-only writes, and no network. Work requiring approval is handed off to Codex.</p>
+      </section>
+
+      <section id="model-preset-settings" hidden>
+        <h2>Preset de modèle</h2>
+        <label>Modèle<select data-scope="action" data-key="modelAlias"><option value="auto">Auto</option><option value="sol">Sol</option><option value="terra">Terra</option><option value="luna">Luna</option></select></label>
+        <p class="hint">La touche reste indisponible si ce modèle n’est pas annoncé par <code>model/list</code>.</p>
+      </section>
+
+      <section id="effort-preset-settings" hidden>
+        <h2>Preset d’effort</h2>
+        <label>Niveau<select data-scope="action" data-key="effort"><option value="cycle">Faire défiler</option><option value="low">Léger</option><option value="medium">Moyen</option><option value="high">Élevé</option><option value="xhigh">Très élevé</option><option value="max">Max</option><option value="ultra">Ultra</option></select></label>
+        <p class="hint">Appui court : sélectionner. Appui long : revenir au niveau par défaut du modèle.</p>
+      </section>
+
+      <section id="preset-state">
+        <h2>Preset actif</h2>
+        <p id="preset-summary" class="hint">Auto</p>
       </section>
 
       <section>

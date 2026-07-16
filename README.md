@@ -11,11 +11,16 @@ This is an unofficial community project and is not affiliated with or endorsed b
 ## Features
 
 - Meaningful Codex task titles across two lines
-- Live states such as `WORKING`, `INPUT`, `APPROVAL`, `REVIEW`, `DONE`, and `FAILED`
-- Freshness labels such as `UPDATED 20M` and `HOLD TO CHECK`
+- États en français comme `EN COURS`, `RÉPONSE`, `À VALIDER`, `À RELIRE`, `TERMINÉ` et `ÉCHEC`
+- Fraîcheur lisible avec `MAJ 20M` et `MAINTENIR`
+- Signal lumineux court lorsqu’une tâche demande une réponse ou une validation
 - Tap to open the exact `codex://threads/<id>` task
 - Hold to run a schema-constrained status check without project-file writes or tool network access
-- Refresh, New Task, Open Code, Review, Interrupt, Health, Settings, and Skills actions
+- Actions Actualiser, Nouvelle, Code, À relire, Arrêter, Connexion, Réglages et Skills
+- Presets dynamiques Auto, Sol, Terra et Luna, découverts via `model/list`
+- Effort cyclable selon les niveaux réellement pris en charge par le modèle sélectionné
+- Commandes natives directes `Léger`, `Moyen`, `Élevé`, `Très élevé`, `Max` et `Ultra` pour le composer actuellement ouvert
+- Application du preset aux nouvelles tâches démarrées par le plugin
 - Optional completion updates from Codex desktop, CLI, and IDE through a loopback-only notify bridge
 - Atomic local cache, bounded payloads, secret-redacted logs, and defensive approval rejection
 
@@ -50,13 +55,22 @@ npm run dev
 
 See [Complete setup](docs/SETUP.md) for Codex authentication, key layout, passive updates, troubleshooting, and uninstall steps.
 
-## Recommended 15-key layout
+## Recommended XL layout
 
 ```text
 [Project 1] [Project 2] [Project 3] [Project 4] [Project 5]
 [Project 6] [Project 7] [Project 8] [Refresh  ] [Health   ]
 [New Task ] [Open Code] [Review   ] [Interrupt] [Settings ]
+[MODÈLE / EFFORT] [MODÈLE DÉFAUT] [SOL      ] [TERRA    ] [LUNA     ]
+[LÉGER    ] [MOYEN    ] [ÉLEVÉ    ] [TRÈS ÉLEVÉ] [MAX      ] [ULTRA    ]
 ```
+
+`MODÈLE / EFFORT` ouvre l’unique sélecteur natif combiné de la tâche actuellement affichée dans Codex. Les touches `MODÈLE DÉFAUT`, `SOL`, `TERRA` et `LUNA` pilotent uniquement le preset des prochaines tâches créées par le plugin. Un modèle absent de `model/list` reste explicitement indisponible au lieu d’être simulé.
+
+Les six touches d’effort utilisent les commandes clavier natives de Codex. Chaque touche descend d’abord jusqu’au minimum, puis remonte au niveau demandé. Ce mécanisme agit donc sur le composer ouvert et sur le prochain tour, indépendamment du bridge App Server. Si un modèle ne propose pas `Ultra`, la commande native reste bornée à son niveau maximal disponible.
+
+Sous Windows, le script `scripts/install-preset-row.ps1` ajoute cette rangée à un profil Codex existant après en avoir sauvegardé le manifeste.
+Le script `scripts/install-native-effort-hotkeys.ps1` convertit uniquement les touches d’effort fixes déjà présentes, sans les déplacer. Il sauvegarde le manifeste, fusionne deux raccourcis réservés dans `~/.codex/keybindings.json`, puis demande un redémarrage unique de Codex pour charger ces raccourcis.
 
 Project keys automatically follow physical position unless you assign a slot number or pin a task in the Property Inspector.
 
@@ -65,12 +79,12 @@ Project keys automatically follow physical position unless you assign a slot num
 | Label | Meaning |
 | --- | --- |
 | `WORKING` / `RUNNING` | Codex or the plugin reports active work. |
-| `INPUT` / `APPROVAL` | The task needs attention in Codex. |
+| `RÉPONSE` / `À VALIDER` | La tâche demande une intervention dans Codex. |
 | `REVIEW` | Work is ready to review. |
-| `DONE` | A validated workflow report says the objective is complete. |
+| `TERMINÉ` | Un rapport de statut valide indique que l’objectif est terminé. |
 | `BLOCKED` / `FAILED` | The report identified a blocker or failure. |
-| `NO STATUS` | The task has not produced a structured status report yet. |
-| `HOLD TO CHECK` | Hold that project key for about one second to request a fresh status. |
+| `À VÉRIFIER` | La tâche n’a pas encore produit de rapport structuré. |
+| `MAINTENIR` | Maintenir la touche environ une seconde pour demander un statut frais. |
 | `UPDATED 20M` | The latest structured status was received 20 minutes ago. |
 
 A quick tap opens the task. A hold of at least 650 ms starts a read-only status turn. The check can update Codex task-goal metadata, but it cannot edit project files, use tool network access, or approve an operation.
